@@ -115,7 +115,7 @@ def main():
         for i in range(numDataPts):
             pressure_vapor[i] = 1 / (moleFract[i]/pSat_c1 + (1-moleFract[i])/pSat_c2)
             pressure_liquid[i] = moleFract[i]*pSat_c1 + (1-moleFract[i])*pSat_c2
-        figure = Figure(figsize=(7,7), dpi=numDataPts)
+        figure = Figure(figsize=(8,7), dpi=numDataPts)
         # Parameter is location
         phase_diagram = figure.add_subplot(111)
         phase_diagram.plot(moleFract, pressure_liquid, 'orange', label="Liquidus Boundary")
@@ -125,10 +125,12 @@ def main():
                           ylim = (0,pressure_vapor[-1]*1.2),
                           xlabel=f"Mole fraction of {component1.get()}",
                           ylabel="Pressure [atm]",
-                          title=f'Pressure vs. xy Phase Diagram of a(n) {component1.get()} + {component2.get()} Binary Mixture'
+                          title=f'Pressure vs. xy Phase Diagram of a(n) {component1.get()} + {component2.get()} Binary Mixture @T = {temp}°C'
                         )
         phase_diagram.legend()
-        phase_diagram.grid()
+        phase_diagram.minorticks_on()
+        phase_diagram.grid(which='major')
+        phase_diagram.grid(which='minor', linestyle='--')
         chart = FigureCanvasTkAgg(figure, root)
         chart.get_tk_widget().grid(row=7, column=2)
 
