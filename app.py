@@ -102,7 +102,38 @@ def main():
     temperature_entry = Entry(root, width=20)
     temperature_prompt.grid(row=2,column=0)
     temperature_entry.grid(row=2,column=1)
-    
+
+    def plot(temp):
+        numDataPts = 100
+        # moleFract are the mole fractions of component 1
+        moleFract = np.linspace(0, 1.0, numDataPts, endpoint=True)
+        coefficients_1 = query("Select A, B, C FROM coefficients WHERE Component = '" + component1.get() + "'")[0]
+        coefficients_2 = query("Select A, B, C FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
+        # Pressures are in [mmHg] => 1 atm = 760 mmHg
+        pSat_c1 = pow(10, (coefficients_1[0] - (coefficients_1[1] / (temp + coefficients_1[2])))) / 760
+        pSat_c2 = pow(10, (coefficients_2[0] - (coefficients_2[1] / (temp + coefficients_2[2])))) / 760
+        pressure_vapor = np.zeros(numDataPts)
+        pressure_liquid = np.zeros(numDataPts)
+        for i in range(numDataPts):
+            pressure_vapor[i] = 1 / (moleFract[i]/pSat_c1 + (1-moleFract[i])/pSat_c2)
+            pressure_liquid[i] = moleFract[i]*pSat_c1 + (1-moleFract[i])*pSat_c2
+        figure = Figure(figsize=(7,7), dpi=numDataPts)
+        # Parameter is location
+        phase_diagram = figure.add_subplot(111)
+        phase_diagram.plot(moleFract, pressure_liquid, 'orange', label="Liquidus Boundary")
+        phase_diagram.plot(moleFract, pressure_vapor, 'blue', label="Gaseous Boundary")
+        
+        phase_diagram.set(xlim=(0,1.0),
+                          ylim = (0,pressure_vapor[-1]*1.2),
+                          xlabel=f"Mole fraction of {component1.get()}",
+                          ylabel="Pressure [atm]",
+                          title=f'Pressure vs. xy Phase Diagram of a(n) {component1.get()} + {component2.get()} Binary Mixture'
+                        )
+        phase_diagram.legend()
+        phase_diagram.grid()
+        chart = FigureCanvasTkAgg(figure, root)
+        chart.get_tk_widget().grid(row=7, column=2)
+
     def submit():
         if component1.get() not in component_options or component2.get() not in component_options:
             messagebox.showerror(title="Invalid Component(s)", 
@@ -118,7 +149,7 @@ def main():
             message=f"{component1.get()} and {component2.get()} do NOT both obey Raoult's Law @T = {temperature}" 
             )
             return
-        plot(temperature, "build")
+        plot(temperature)
     
     # Submit component values button
     submit_button = Button(root, text="Confirm", command=submit)
