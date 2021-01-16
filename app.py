@@ -105,7 +105,10 @@ def main():
         low_T_2 = query("SELECT Low_T FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
         high_T_2 = query("SELECT High_T FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
         temperature = float(temperature_entry.get())
-
+        if temperature < low_T_1 or temperature > high_T_1 or temperature < low_T_2 or temperature > high_T_2:
+            messagebox.showerror(title="Error", 
+            message=f"There are no valid temperatures at which {component1.get()} and {component2.get()} both obey Raoult's Law." 
+            )
     # Submit component values button
     submit_button = Button(root, text="Confirm", command=submit)
     submit_button.grid(row=3, column=2)
