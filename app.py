@@ -2,13 +2,11 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 import sqlite3
-from matplotlib import figure
 from numpy import *
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def removeDuplicates(og_list):
     list = []
