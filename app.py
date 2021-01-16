@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
 import sqlite3
+from matplotlib import figure
 from numpy import *
 import pandas as pd
 import numpy as np
@@ -78,10 +79,6 @@ def main():
 
     root = Tk()
 
-    # Creating Title Widget
-    title = Label(root, text="Pressure-Composition Phase Diagram Generator")
-    title.grid(row=0, columnspan=5)
-
     # Creating the variables storing component names
     component1 = StringVar(root)
     component1.set("Select a component")
@@ -102,42 +99,26 @@ def main():
 
     # Select constant temperautre  widgets
     temperature_prompt = Label(root, text="Constant T [°C] of the system:")
-    temperature_entry = Entry(root, width=20, bg="gray", fg="white")
+    temperature_entry = Entry(root, width=20)
     temperature_prompt.grid(row=2,column=0)
     temperature_entry.grid(row=2,column=1)
-
-    def plot(temp):
-        # moleFract are the mole fractions of component 1
-        moleFract = np.linspace(0, 1.0, 100, endpoint=True)
-        coefficients_1 = query("Select A, B, C FROM coefficients WHERE Component = '" + component1.get() + "'")[0]
-        coefficients_2 = query("Select A, B, C FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
-        # Pressures are in [mmHg] => 1 atm = 760 mmHg
-        pSat_c1 = pow(10, (coefficients_1[0] - (coefficients_1[1] / (temp + coefficients_1[2])))) / 760
-        pSat_c2 = pow(10, (coefficients_2[0] - (coefficients_2[1] / (temp + coefficients_2[2])))) / 760
-        pressure_vapor = np.zeros(100)
-        pressure_liquid = np.zeros(100)
-        for i in range(100):
-            pressure_vapor[i] = 1 / (moleFract[i]/pSat_c1 + (1-moleFract[i])/pSat_c2)
-            pressure_liquid[i] = moleFract[i]*pSat_c1 + (1-moleFract[i])*pSat_c2
-        f = Figure(figsize=(5,5), dpi=100)
-        # Parameter is location
-        a = f.add_subplot(111)
-        a.plot(moleFract, pressure_liquid, 'o')
-        a.plot(moleFract, pressure_vapor, 'o')
-        chart = FigureCanvasTkAgg(f, root)
-        chart.get_tk_widget().grid(row=6, col=2)
-
+    
     def submit():
+        if component1.get() not in component_options or component2.get() not in component_options:
+            messagebox.showerror(title="Invalid Component(s)", 
+            message=f"{component1.get()} and/or {component2.get()} is an invalid component pair. Names are case-sensitive!" 
+            )
         low_T_1 = query("SELECT Low_T FROM coefficients WHERE Component = '" + component1.get() + "'")[0]
         high_T_1 = query("SELECT High_T FROM coefficients WHERE Component = '" + component1.get() + "'")[0]
         low_T_2 = query("SELECT Low_T FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
         high_T_2 = query("SELECT High_T FROM coefficients WHERE Component = '" + component2.get() + "'")[0]
         temperature = float(temperature_entry.get())
         if temperature < low_T_1 or temperature > high_T_1 or temperature < low_T_2 or temperature > high_T_2:
-            messagebox.showerror(title="Error", 
-            message=f"There are no valid temperatures at which {component1.get()} and {component2.get()} both obey Raoult's Law." 
+            messagebox.showerror(title="Invalid Temperature", 
+            message=f"{component1.get()} and {component2.get()} do NOT both obey Raoult's Law @T = {temperature}" 
             )
-        plot(temperature)
+            return
+        plot(temperature, "build")
     
     # Submit component values button
     submit_button = Button(root, text="Confirm", command=submit)
@@ -149,7 +130,8 @@ def main():
         root.grid_columnconfigure(col, minsize=100)
     for row in range(row_count):
         root.grid_rowconfigure(row, minsize=10)
-
+    root.minsize(width=1250,height=700)
+    root.title("Pressure-Composition Phase Diagram Generator")
     root.mainloop()
 
 if __name__ == "__main__":
